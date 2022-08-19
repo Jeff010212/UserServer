@@ -43,8 +43,7 @@ const int HTTP_11 = 2;
 
 const int EPOLL_WAIT_TIME = 500;
 
-class MimeType
-{
+class MimeType{
 private:
     static void init();
     static std::unordered_map<std::string, std::string> mime;
@@ -58,8 +57,7 @@ private:
     static pthread_once_t once_control;
 };
 
-enum HeadersState
-{
+enum HeadersState{
     h_start = 0,
     h_key,
     h_colon,
@@ -73,8 +71,7 @@ enum HeadersState
 
 class TimerNode;
 
-class RequestData : public std::enable_shared_from_this<RequestData>
-{
+class RequestData : public std::enable_shared_from_this<RequestData>{
 private:
     std::string path;
     int fd;
@@ -104,8 +101,7 @@ private:
     int parse_Headers();
     int analysisRequest();
 
-    Mat stitch(Mat &src)
-    {
+    Mat stitch(Mat &src){
         return src;
     }
 

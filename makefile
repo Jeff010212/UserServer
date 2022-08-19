@@ -3,7 +3,7 @@ OBJS    := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCE)))
 
 TARGET  := myserver
 CC      := g++ 
-LIBS    := `pkg-config opencv4 --cflags --libs` -lpthread
+LIBS    := `pkg-config opencv4 --cflags --libs`  `mysql_config -cflags --libs`	-lpthread 
 INCLUDE:= -I./usr/local/include/opencv
 CFLAGS  := -std=c++11 -g -Wall -O0 $(INCLUDE) -D_PTHREADS
 CXXFLAGS:= $(CFLAGS)

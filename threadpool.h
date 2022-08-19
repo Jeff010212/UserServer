@@ -16,22 +16,19 @@ const int THREADPOOL_GRACEFUL = 1;
 const int MAX_THREADS = 1024;
 const int MAX_QUEUE = 65535;
 
-typedef enum
-{
+typedef enum{
     immediate_shutdown = 1,
     graceful_shutdown  = 2
 } ShutDownOption;
 
-struct ThreadPoolTask
-{
+struct ThreadPoolTask{
     std::function<void(std::shared_ptr<void>)> fun;
     std::shared_ptr<void> args;
 };
 
 void myHandler(std::shared_ptr<void> req);
 
-class ThreadPool
-{
+class ThreadPool{
 private:
     static pthread_mutex_t lock;
     static pthread_cond_t notify;

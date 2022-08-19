@@ -9,8 +9,7 @@
 
 class RequestData;
 
-class TimerNode
-{
+class TimerNode{
     typedef std::shared_ptr<RequestData> SP_ReqData;
 private:
     bool deleted;
@@ -27,16 +26,13 @@ public:
     size_t getExpTime() const;
 };
 
-struct timerCmp
-{
-    bool operator()(std::shared_ptr<TimerNode> &a, std::shared_ptr<TimerNode> &b) const
-    {
+struct timerCmp{
+    bool operator()(std::shared_ptr<TimerNode> &a, std::shared_ptr<TimerNode> &b) const{
         return a->getExpTime() > b->getExpTime();
     }
 };
 
-class TimerManager
-{
+class TimerManager{
     typedef std::shared_ptr<RequestData> SP_ReqData;
     typedef std::shared_ptr<TimerNode> SP_TimerNode;
 private:

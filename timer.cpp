@@ -25,10 +25,7 @@ TimerNode::TimerNode(SP_ReqData _request_data, int timeout):
 TimerNode::~TimerNode()
 {
     //cout << "~TimerNode()" << endl;
-    if (request_data)
-    {
-        Epoll::epoll_del(request_data->getFd());
-    }
+    if (request_data)Epoll::epoll_del(request_data->getFd());
     //request_data.reset();
     // if (request_data)
     // {
@@ -38,24 +35,18 @@ TimerNode::~TimerNode()
     // }
 }
 
-void TimerNode::update(int timeout)
-{
+void TimerNode::update(int timeout){
     struct timeval now;
     gettimeofday(&now, NULL);
     expired_time = ((now.tv_sec * 1000) + (now.tv_usec / 1000)) + timeout;
 }
 
-bool TimerNode::isvalid()
-{
+bool TimerNode::isvalid(){
     struct timeval now;
     gettimeofday(&now, NULL);
     size_t temp = ((now.tv_sec * 1000) + (now.tv_usec / 1000));
-    if (temp < expired_time)
-    {
-        return true;
-    }
-    else
-    {
+    if (temp < expired_time)return true;
+    else{
         this->setDeleted();
         return false;
     }
@@ -67,43 +58,25 @@ void TimerNode::clearReq()
     this->setDeleted();
 }
 
-void TimerNode::setDeleted()
-{
-    deleted = true;
-}
+void TimerNode::setDeleted(){deleted = true;}
 
-bool TimerNode::isDeleted() const
-{
-    return deleted;
-}
+bool TimerNode::isDeleted() const{return deleted;}
 
-size_t TimerNode::getExpTime() const
-{
-    return expired_time;
-}
+size_t TimerNode::getExpTime() const{return expired_time;}
 
-TimerManager::TimerManager()
-{
-}
+TimerManager::TimerManager(){}
 
-TimerManager::~TimerManager()
-{
-}
+TimerManager::~TimerManager(){}
 
-void TimerManager::addTimer(SP_ReqData request_data, int timeout)
-{
-    SP_TimerNode new_node(new TimerNode(request_data, timeout));
-    {
+void TimerManager::addTimer(SP_ReqData request_data, int timeout){
+    SP_TimerNode new_node(new TimerNode(request_data, timeout));{
         MutexLockGuard locker(lock);
         TimerNodeQueue.push(new_node);
     }
     request_data->linkTimer(new_node);
 }
 
-void TimerManager::addTimer(SP_TimerNode timer_node)
-{
-
-}
+void TimerManager::addTimer(SP_TimerNode timer_node){}
 
 /* 处理逻辑是这样的~
 因为(1) 优先队列不支持随机访问
@@ -116,25 +89,12 @@ void TimerManager::addTimer(SP_TimerNode timer_node)
 就不用再重新申请RequestData节点了，这样可以继续重复利用前面的RequestData，减少了一次delete和一次new的时间。
 */
 
-void TimerManager::handle_expired_event()
-{
+void TimerManager::handle_expired_event(){
     MutexLockGuard locker(lock);
-    while (!TimerNodeQueue.empty())
-    {
+    while (!TimerNodeQueue.empty()){
         SP_TimerNode ptimer_now = TimerNodeQueue.top();
-        if (ptimer_now->isDeleted())
-        {
-            TimerNodeQueue.pop();
-            //delete ptimer_now;
-        }
-        else if (ptimer_now->isvalid() == false)
-        {
-            TimerNodeQueue.pop();
-            //delete ptimer_now;
-        }
-        else
-        {
-            break;
-        }
+        if (ptimer_now->isDeleted())TimerNodeQueue.pop();
+        else if (ptimer_now->isvalid() == false)TimerNodeQueue.pop();
+        else break;
     }
 }

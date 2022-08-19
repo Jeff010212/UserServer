@@ -1,6 +1,7 @@
 #include "requestData.h"
 #include "util.h"
 #include "epoll.h"
+#include "database.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -22,8 +23,7 @@ pthread_once_t MimeType::once_control = PTHREAD_ONCE_INIT;
 std::unordered_map<std::string, std::string> MimeType::mime;
 
 
-void MimeType::init()
-{
+void MimeType::init(){
     mime[".html"] = "text/html";
     mime[".avi"] = "video/x-msvideo";
     mime[".bmp"] = "image/bmp";
@@ -40,13 +40,10 @@ void MimeType::init()
     mime["default"] = "text/html";
 }
 
-std::string MimeType::getMime(const std::string &suffix)
-{
+std::string MimeType::getMime(const std::string &suffix){
     pthread_once(&once_control, MimeType::init);
-    if (mime.find(suffix) == mime.end())
-        return mime["default"];
-    else
-        return mime[suffix];
+    if (mime.find(suffix) == mime.end())return mime["default"];
+    else return mime[suffix];
 }
 
 RequestData::RequestData(): 
@@ -58,9 +55,7 @@ RequestData::RequestData():
     isAbleWrite(false),
     events(0),
     error(false)
-{
-    cout << "RequestData()" << endl;
-}
+{cout << "RequestData()" << endl;}
 
 RequestData::RequestData(int _epollfd, int _fd, std::string _path):
     now_read_pos(0), 
@@ -74,34 +69,23 @@ RequestData::RequestData(int _epollfd, int _fd, std::string _path):
     isAbleWrite(false),
     events(0),
     error(false)
-{
-    cout << "RequestData()" << endl;
-}
+{cout << "RequestData()" << endl;}
 
-RequestData::~RequestData()
-{
+RequestData::~RequestData(){
     cout << "~RequestData()" << endl;
     close(fd);
 }
 
-void RequestData::linkTimer(shared_ptr<TimerNode> mtimer)
-{
+void RequestData::linkTimer(shared_ptr<TimerNode> mtimer){
     // shared_ptr重载了bool, 但weak_ptr没有
     //if (!timer.lock())
     timer = mtimer;
 }
 
-int RequestData::getFd()
-{
-    return fd;
-}
-void RequestData::setFd(int _fd)
-{
-    fd = _fd;
-}
+int RequestData::getFd(){return fd;}
+void RequestData::setFd(int _fd){fd = _fd;}
 
-void RequestData::reset()
-{
+void RequestData::reset(){
     inBuffer.clear();
     file_name.clear();
     path.clear();
@@ -110,180 +94,153 @@ void RequestData::reset()
     h_state = h_start;
     headers.clear();
     //keep_alive = false;
-    if (timer.lock())
-    {
+    if (timer.lock()){
         shared_ptr<TimerNode> my_timer(timer.lock());
         my_timer->clearReq();
         timer.reset();
     }
 }
 
-void RequestData::seperateTimer()
-{
+void RequestData::seperateTimer(){
     //cout << "seperateTimer" << endl;
-    if (timer.lock())
-    {
+    if (timer.lock()){
         shared_ptr<TimerNode> my_timer(timer.lock());
         my_timer->clearReq();
         timer.reset();
     }
 }
 
-void RequestData::handleRead()
-{
-    do
-    {
+void RequestData::handleRead(){
+    do{
         int read_num = readn(fd, inBuffer);
         //printf("read_num=%d\n", read_num);
-        if (read_num < 0)
-        {
+        if (read_num < 0){
             perror("1");
             error = true;
             handleError(fd, 400, "Bad Request");
             break;
         }
-        else if (read_num == 0)
-        {
+        else if (read_num == 0){
             // 有请求出现但是读不到数据，可能是Request Aborted，或者来自网络的数据没有达到等原因
             // 最可能是对端已经关闭了，统一按照对端已经关闭处理
             error = true;
             break; 
         }
 
-        if (state == STATE_PARSE_URI)
-        {
+        if (state == STATE_PARSE_URI){
             int flag = this->parse_URI();
-            if (flag == PARSE_URI_AGAIN)
-                break;
-            else if (flag == PARSE_URI_ERROR)
-            {
+            if (flag == PARSE_URI_AGAIN)break;
+            else if (flag == PARSE_URI_ERROR){
                 perror("2");
                 error = true;
                 handleError(fd, 400, "Bad Request");
                 break;
             }
-            else
-                state = STATE_PARSE_HEADERS;
+            else state = STATE_PARSE_HEADERS;
         }
-        if (state == STATE_PARSE_HEADERS)
-        {
+        if (state == STATE_PARSE_HEADERS){
             int flag = this->parse_Headers();
-            if (flag == PARSE_HEADER_AGAIN)
-                break;
-            else if (flag == PARSE_HEADER_ERROR)
-            {
+            if (flag == PARSE_HEADER_AGAIN)break;
+            else if (flag == PARSE_HEADER_ERROR){
                 perror("3");
                 error = true;
                 handleError(fd, 400, "Bad Request");
                 break;
             }
-            if(method == METHOD_POST)
-            {
+            if(method == METHOD_POST){
                 // POST方法准备
                 state = STATE_RECV_BODY;
             }
-            else 
-            {
-                state = STATE_ANALYSIS;
-            }
+            else state = STATE_ANALYSIS;
         }
-        if (state == STATE_RECV_BODY)
-        {
+        if (state == STATE_RECV_BODY){
             int content_length = -1;
-            if (headers.find("Content-length") != headers.end())
-            {
-                content_length = stoi(headers["Content-length"]);
-            }
-            else
-            {
+            if (headers.find("Content-length") != headers.end())content_length = stoi(headers["Content-length"]);
+            else{
                 error = true;
                 handleError(fd, 400, "Bad Request: Lack of argument (Content-length)");
                 break;
             }
-            if (inBuffer.size() < content_length)
-                break;
+            if (inBuffer.size() < content_length)break;
             state = STATE_ANALYSIS;
+            if(method == METHOD_POST){
+                string js=inBuffer;
+                string text="",password="";
+                int pos=
+                while()
+                DataBase dbs;
+                if(path=="/personal.html"){
+                    if(dbs.CheckUser(text,password)!=0){
+                        perror("error");
+                        error = true;
+                    }
+                }
+                else if(path="/login.html"){
+                    if(dbs.AddUser(text,passowrd)){
+                        perror("error");
+                        error = true;
+                    }
+                }
+            }
         }
-        if (state == STATE_ANALYSIS)
-        {
+        if (state == STATE_ANALYSIS){
             int flag = this->analysisRequest();
-            if (flag == ANALYSIS_SUCCESS)
-            {
+            if (flag == ANALYSIS_SUCCESS){
                 state = STATE_FINISH;
                 break;
             }
-            else
-            {
+            else{
                 error = true;
                 break;
             }
         }
     } while (false);
 
-    if (!error)
-    {
-        if (outBuffer.size() > 0)
-            events |= EPOLLOUT;
-        if (state == STATE_FINISH)
-        {
+    if (!error){
+        if (outBuffer.size() > 0)events |= EPOLLOUT;
+        if (state == STATE_FINISH){
             cout << "keep_alive=" << keep_alive << endl;
-            if (keep_alive)
-            {
+            if (keep_alive){
                 this->reset();
                 events |= EPOLLIN;
             }
-            else
-                return;
+            else return;
         }
-        else
-            events |= EPOLLIN;
+        else events |= EPOLLIN;
     }
 }
 
-void RequestData::handleWrite()
-{
-    if (!error)
-    {
-        if (writen(fd, outBuffer) < 0)
-        {
+void RequestData::handleWrite(){
+    if (!error){
+        if (writen(fd, outBuffer) < 0){
             perror("writen");
             events = 0;
             error = true;
         }
-        else if (outBuffer.size() > 0)
-            events |= EPOLLOUT;
+        else if (outBuffer.size() > 0)events |= EPOLLOUT;
     }
 }
 
-void RequestData::handleConn()
-{
-    if (!error)
-    {
-        if (events != 0)
-        {
+void RequestData::handleConn(){
+    if (!error){
+        if (events != 0){
             // 一定要先加时间信息，否则可能会出现刚加进去，下个in触发来了，然后分离失败后，又加入队列，最后超时被删，然后正在线程中进行的任务出错，double free错误。
             // 新增时间信息
             int timeout = 2000;
-            if (keep_alive)
-                timeout = 5 * 60 * 1000;
+            if (keep_alive)timeout = 5 * 60 * 1000;
             isAbleRead = false;
             isAbleWrite = false;
             Epoll::add_timer(shared_from_this(), timeout);
-            if ((events & EPOLLIN) && (events & EPOLLOUT))
-            {
+            if ((events & EPOLLIN) && (events & EPOLLOUT)){
                 events = __uint32_t(0);
                 events |= EPOLLOUT;
             }
             events |= (EPOLLET | EPOLLONESHOT);
             __uint32_t _events = events;
             events = 0;
-            if (Epoll::epoll_mod(fd, shared_from_this(), _events) < 0)
-            {
-                printf("Epoll::epoll_mod error\n");
-            }
+            if (Epoll::epoll_mod(fd, shared_from_this(), _events) < 0)printf("Epoll::epoll_mod error\n");
         }
-        else if (keep_alive)
-        {
+        else if (keep_alive){
             events |= (EPOLLIN | EPOLLET | EPOLLONESHOT);
             int timeout = 5 * 60 * 1000;
             isAbleRead = false;
@@ -291,192 +248,131 @@ void RequestData::handleConn()
             Epoll::add_timer(shared_from_this(), timeout);
             __uint32_t _events = events;
             events = 0;
-            if (Epoll::epoll_mod(fd, shared_from_this(), _events) < 0)
-            {
-                printf("Epoll::epoll_mod error\n");
-            }
+            if (Epoll::epoll_mod(fd, shared_from_this(), _events) < 0)printf("Epoll::epoll_mod error\n");
         }
     }
 }
 
 
-int RequestData::parse_URI()
-{
+int RequestData::parse_URI(){
     string &str = inBuffer;
     // 读到完整的请求行再开始解析请求
     int pos = str.find('\r', now_read_pos);
-    if (pos < 0)
-    {
-        return PARSE_URI_AGAIN;
-    }
+    if (pos < 0)return PARSE_URI_AGAIN;
+
     // 去掉请求行所占的空间，节省空间
     string request_line = str.substr(0, pos);
-    if (str.size() > pos + 1)
-        str = str.substr(pos + 1);
-    else 
-        str.clear();
+    if (str.size() > pos + 1)str = str.substr(pos + 1);
+    else str.clear();
     // Method
     pos = request_line.find("GET");
-    if (pos < 0)
-    {
+    if (pos < 0){
         pos = request_line.find("POST");
-        if (pos < 0)
-            return PARSE_URI_ERROR;
-        else
-            method = METHOD_POST;
+        if (pos < 0)return PARSE_URI_ERROR;
+        else method = METHOD_POST;
     }
-    else
-        method = METHOD_GET;
+    else method = METHOD_GET;
     //printf("method = %d\n", method);
     // filename
     pos = request_line.find("/", pos);
-    if (pos < 0)
-        return PARSE_URI_ERROR;
-    else
-    {
+    if (pos < 0)return PARSE_URI_ERROR;
+    else{
         int _pos = request_line.find(' ', pos);
-        if (_pos < 0)
-            return PARSE_URI_ERROR;
-        else
-        {
-            if (_pos - pos > 1)
-            {
+        if (_pos < 0)return PARSE_URI_ERROR;
+        else{
+            if (_pos - pos > 1){
                 file_name = request_line.substr(pos + 1, _pos - pos - 1);
                 int __pos = file_name.find('?');
-                if (__pos >= 0)
-                {
-                    file_name = file_name.substr(0, __pos);
-                }
-            }
-                
-            else
-                file_name = "index.html";
+                if (__pos >= 0)file_name = file_name.substr(0, __pos);
+            }              
+            else file_name = "index.html";
         }
         pos = _pos;
     }
     //cout << "file_name: " << file_name << endl;
     // HTTP 版本号
     pos = request_line.find("/", pos);
-    if (pos < 0)
-        return PARSE_URI_ERROR;
-    else
-    {
-        if (request_line.size() - pos <= 3)
-            return PARSE_URI_ERROR;
-        else
-        {
+    if (pos < 0)return PARSE_URI_ERROR;
+    else{
+        if (request_line.size() - pos <= 3)return PARSE_URI_ERROR;
+        else{
             string ver = request_line.substr(pos + 1, 3);
-            if (ver == "1.0")
-                HTTPversion = HTTP_10;
-            else if (ver == "1.1")
-                HTTPversion = HTTP_11;
-            else
-                return PARSE_URI_ERROR;
+            if (ver == "1.0")HTTPversion = HTTP_10;
+            else if (ver == "1.1")HTTPversion = HTTP_11;
+            else return PARSE_URI_ERROR;
         }
     }
     return PARSE_URI_SUCCESS;
 }
 
-int RequestData::parse_Headers()
-{
+int RequestData::parse_Headers(){
     string &str = inBuffer;
     int key_start = -1, key_end = -1, value_start = -1, value_end = -1;
     int now_read_line_begin = 0;
     bool notFinish = true;
-    for (int i = 0; i < str.size() && notFinish; ++i)
-    {
-        switch(h_state)
-        {
-            case h_start:
-            {
-                if (str[i] == '\n' || str[i] == '\r')
-                    break;
+    for (int i = 0; i < str.size() && notFinish; ++i){
+        switch(h_state){
+            case h_start:{
+                if (str[i] == '\n' || str[i] == '\r')break;
                 h_state = h_key;
                 key_start = i;
                 now_read_line_begin = i;
                 break;
             }
-            case h_key:
-            {
-                if (str[i] == ':')
-                {
+            case h_key:{
+                if (str[i] == ':'){
                     key_end = i;
                     if (key_end - key_start <= 0)
                         return PARSE_HEADER_ERROR;
                     h_state = h_colon;
                 }
-                else if (str[i] == '\n' || str[i] == '\r')
-                    return PARSE_HEADER_ERROR;
+                else if (str[i] == '\n' || str[i] == '\r')return PARSE_HEADER_ERROR;
                 break;  
             }
-            case h_colon:
-            {
-                if (str[i] == ' ')
-                {
-                    h_state = h_spaces_after_colon;
-                }
-                else
-                    return PARSE_HEADER_ERROR;
+            case h_colon:{
+                if (str[i] == ' ')h_state = h_spaces_after_colon;
+                else return PARSE_HEADER_ERROR;
                 break;  
             }
-            case h_spaces_after_colon:
-            {
+            case h_spaces_after_colon:{
                 h_state = h_value;
                 value_start = i;
                 break;  
             }
-            case h_value:
-            {
-                if (str[i] == '\r')
-                {
+            case h_value:{
+                if (str[i] == '\r'){
                     h_state = h_CR;
                     value_end = i;
-                    if (value_end - value_start <= 0)
-                        return PARSE_HEADER_ERROR;
+                    if (value_end - value_start <= 0)return PARSE_HEADER_ERROR;
                 }
-                else if (i - value_start > 255)
-                    return PARSE_HEADER_ERROR;
+                else if (i - value_start > 255)return PARSE_HEADER_ERROR;
                 break;  
             }
-            case h_CR:
-            {
-                if (str[i] == '\n')
-                {
+            case h_CR:{
+                if (str[i] == '\n'){
                     h_state = h_LF;
                     string key(str.begin() + key_start, str.begin() + key_end);
                     string value(str.begin() + value_start, str.begin() + value_end);
                     headers[key] = value;
                     now_read_line_begin = i;
                 }
-                else
-                    return PARSE_HEADER_ERROR;
+                else return PARSE_HEADER_ERROR;
                 break;  
             }
-            case h_LF:
-            {
-                if (str[i] == '\r')
-                {
-                    h_state = h_end_CR;
-                }
-                else
-                {
+            case h_LF:{
+                if (str[i] == '\r')h_state = h_end_CR;
+                else{
                     key_start = i;
                     h_state = h_key;
                 }
                 break;
             }
-            case h_end_CR:
-            {
-                if (str[i] == '\n')
-                {
-                    h_state = h_end_LF;
-                }
-                else
-                    return PARSE_HEADER_ERROR;
+            case h_end_CR:{
+                if (str[i] == '\n')h_state = h_end_LF;
+                else return PARSE_HEADER_ERROR;
                 break;
             }
-            case h_end_LF:
-            {
+            case h_end_LF:{
                 notFinish = false;
                 key_start = i;
                 now_read_line_begin = i;
@@ -484,8 +380,7 @@ int RequestData::parse_Headers()
             }
         }
     }
-    if (h_state == h_end_LF)
-    {
+    if (h_state == h_end_LF){
         str = str.substr(now_read_line_begin);
         return PARSE_HEADER_SUCCESS;
     }
@@ -493,15 +388,12 @@ int RequestData::parse_Headers()
     return PARSE_HEADER_AGAIN;
 }
 
-int RequestData::analysisRequest()
-{
-    if (method == METHOD_POST)
-    {
+int RequestData::analysisRequest(){
+    if (method == METHOD_POST){
         //get inBuffer
         string header;
         header += string("HTTP/1.1 200 OK\r\n");
-        if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive")
-        {
+        if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive"){
             //cout << "headers" << headers["Connection"] << endl;
             keep_alive = true;
             header += string("Connection: keep-alive\r\n") + "Keep-Alive: timeout=" + to_string(5 * 60 * 1000) + "\r\n";
@@ -524,24 +416,19 @@ int RequestData::analysisRequest()
         inBuffer = inBuffer.substr(length);
         return ANALYSIS_SUCCESS;
     }
-    else if (method == METHOD_GET)
-    {
+    else if (method == METHOD_GET){
         string header;
         header += "HTTP/1.1 200 OK\r\n";
-        if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive")
-        {
+        if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive"){
             keep_alive = true;
             header += string("Connection: keep-alive\r\n") + "Keep-Alive: timeout=" + to_string(5 * 60 * 1000) + "\r\n";
         }
         int dot_pos = file_name.find('.');
         string filetype;
-        if (dot_pos < 0) 
-            filetype = MimeType::getMime("default");
-        else
-            filetype = MimeType::getMime(file_name.substr(dot_pos));
+        if (dot_pos < 0)filetype = MimeType::getMime("default");
+        else filetype = MimeType::getMime(file_name.substr(dot_pos));
         struct stat sbuf;
-        if (stat(file_name.c_str(), &sbuf) < 0)
-        {
+        if (stat(file_name.c_str(), &sbuf) < 0){
             header.clear();
             handleError(fd, 404, "Not Found!");
             return ANALYSIS_ERROR;
@@ -571,12 +458,10 @@ int RequestData::analysisRequest()
         // }
         return ANALYSIS_SUCCESS;
     }
-    else
-        return ANALYSIS_ERROR;
+    else return ANALYSIS_ERROR;
 }
 
-void RequestData::handleError(int fd, int err_num, string short_msg)
-{
+void RequestData::handleError(int fd, int err_num, string short_msg){
     short_msg = " " + short_msg;
     char send_buff[MAX_BUFF];
     string body_buff, header_buff;
@@ -598,24 +483,11 @@ void RequestData::handleError(int fd, int err_num, string short_msg)
 }
 
 
-void RequestData::disableReadAndWrite()
-{
+void RequestData::disableReadAndWrite(){
     isAbleRead = false;
     isAbleWrite = false;
 }
-void RequestData::enableRead()
-{
-    isAbleRead = true;
-}
-void RequestData::enableWrite()
-{
-    isAbleWrite = true;
-}
-bool RequestData::canRead()
-{
-    return isAbleRead;
-}
-bool RequestData::canWrite()
-{
-    return isAbleWrite;
-}
+void RequestData::enableRead(){isAbleRead = true;}
+void RequestData::enableWrite(){isAbleWrite = true;}
+bool RequestData::canRead(){return isAbleRead;}
+bool RequestData::canWrite(){return isAbleWrite;}

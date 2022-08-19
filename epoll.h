@@ -6,8 +6,7 @@
 #include <sys/epoll.h>
 #include <memory>
 
-class Epoll
-{
+class Epoll{
 public:
     typedef std::shared_ptr<RequestData> SP_ReqData;
 private:
