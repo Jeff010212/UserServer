@@ -166,8 +166,20 @@ void RequestData::handleRead(){
             if(method == METHOD_POST){
                 string js=inBuffer;
                 string text="",password="";
-                int pos=
-                while()
+                int pos=js.find('\r', now_read_pos);
+                int falg=0;
+                while(true){
+                    while(js[pos++]!='\n');
+                    if(js[pos++]=='d'&&js[pos++]=='a'&&js[pos++]=='t'&&js[pos++]=='a'){
+                        while(js[pos]!='t')pos++;
+                        pos+=4;
+                        while(js[pos]!='\n')text+=js[pos++];
+                        while(js[pos]!='p')pos++;
+                        while(js[pos]!='\0')password+=js[pos++];
+                        flag++;
+                    }
+                    if(flag)break;
+                }
                 DataBase dbs;
                 if(path=="/personal.html"){
                     if(dbs.CheckUser(text,password)!=0){
