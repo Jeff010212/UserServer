@@ -101,10 +101,6 @@ private:
     int parse_Headers();
     int analysisRequest();
 
-//    Mat stitch(Mat &src)
-//    {
-//        return src;
-//    }
 
 public:
 
