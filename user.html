@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Personal Introduction</title>
+	<meta charset="utf-8">
+	<style type="text/css">
+		.container {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			padding: 20px;
+			background-color: #f0f0f0;
+		}
+
+		.left {
+			width: 200px;
+			font-size: 18px;
+			font-weight: bold;
+			margin-right: 50px;
+		}
+
+		.right {
+			flex: 1;
+			font-size: 16px;
+			line-height: 1.5;
+		}
+
+		button {
+			background-color: #4CAF50;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			text-align: center;
+			text-decoration: none;
+			display: inline-block;
+			font-size: 16px;
+			border-radius: 5px;
+			cursor: pointer;
+			margin-top: 20px;
+			margin-right: 20px;
+			transition: background-color 0.3s;
+		}
+
+		button:hover {
+			background-color: #3e8e41;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="left">
+			<p>Username: {{username}}</p>
+			<p>ID: {{id}}</p>
+		</div>
+		<div class="right">
+			<p>{{text}}</p>
+		</div>
+		<button onclick="window.location.href='./index.html'">Quit</button>
+	</div>
+</body>
+</html>
